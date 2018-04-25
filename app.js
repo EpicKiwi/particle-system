@@ -13,7 +13,7 @@ document.addEventListener("mousemove", (e) => {
     mousePosition.y = e.clientY
 })
 
-const system = new ParticleSystem(10,700)
+const system = new ParticleSystem(100,700)
 
 function setup(){
     canvas.style.width = canvasWidth+"px"

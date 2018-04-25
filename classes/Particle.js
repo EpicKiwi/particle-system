@@ -5,10 +5,11 @@ class Particle extends Actor {
         this.velocity = new Victor(0,0)
         this.acceleration = new Victor(0,0)
 
-        this.maxForce = 0.1
-        this.maxSpeed = 5
+        this.maxForce = 0.01
+        this.maxSpeed = 10
         this.slowdownCircle = 100
         this.separateCircle = 25
+        this.coordinationCircle = 100
     }
 
     get direction(){
@@ -20,27 +21,14 @@ class Particle extends Actor {
     }
 
     applyBehaviour(particles,desire){
-        /*particles.forEach((p) => {
 
-            let space = p.position.clone()
-            space.add(p.velocity)
-            space.subtract(this.position)
-
-            let distance = space.length()
-
-            if(distance > this.maxDistance) return
-
-            space.normalize().multiplyScalar((distance*this.maxSpeed)/this.maxDistance)
-            space.subtract(this.velocity)
-
-            this.applyForce(space)
-        })*/
-
+        this.coordinate(particles)
         this.separate(particles)
 
         if(desire) {
             this.seek(desire)
         }
+
     }
 
     seek(target){
@@ -63,16 +51,38 @@ class Particle extends Actor {
         this.applyForce(space)
     }
 
-    separate(others){
+    coordinate(others){
         let count = 0
         let sum = others.reduce((ac,el) => {
-                let space = this.position.clone().subtract(el.position)
-                if(el != this && space.length() < this.separateCircle){
+                let space = el.position.clone().subtract(this.position)
+                if(el != this && space.length() < this.coordinationCircle){
                     ac.add(space.normalize())
                     count++
                 }
                 return ac
             },new Victor(0,0))
+
+        if(count < 1) return
+
+        sum.divideScalar(count)
+        sum.normalize().multiplyScalar(this.maxSpeed/2)
+        sum.subtract(this.velocity)
+        if(sum.length() > this.maxForce){
+            sum.multiplyScalar(this.maxForce)
+        }
+        this.applyForce(sum)
+    }
+
+    separate(others){
+        let count = 0
+        let sum = others.reduce((ac,el) => {
+            let space = this.position.clone().subtract(el.position)
+            if(el != this && space.length() < this.separateCircle){
+                ac.add(space.normalize())
+                count++
+            }
+            return ac
+        },new Victor(0,0))
 
         if(count < 1) return
 
