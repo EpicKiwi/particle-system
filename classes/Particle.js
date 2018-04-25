@@ -6,10 +6,9 @@ class Particle extends Actor {
         this.acceleration = new Victor(0,0)
 
         this.maxForce = 0.1
-
-        this.fieldOfView = 120
-        this.farPoint = 100
-        this.minDistance = 50
+        this.maxSpeed = 5
+        this.slowdownCircle = 100
+        this.separateCircle = 25
     }
 
     get direction(){
@@ -21,52 +20,77 @@ class Particle extends Actor {
     }
 
     applyBehaviour(particles,desire){
+        /*particles.forEach((p) => {
 
-        particles.forEach((particle) => {
-            if(particle === this) return;
+            let space = p.position.clone()
+            space.add(p.velocity)
+            space.subtract(this.position)
 
-            let distance = particle.position.clone().subtract(this.position)
-            let distanceLen = distance.length()
+            let distance = space.length()
 
-            let dot = this.direction.dot(distance)
-            let angle = Math.acos(dot/(distanceLen*this.direction.length()))
-            if(angle*(180/Math.PI) > this.fieldOfView){
-                return;
-            }
+            if(distance > this.maxDistance) return
 
-            //distance.add(particle.direction)
+            space.normalize().multiplyScalar((distance*this.maxSpeed)/this.maxDistance)
+            space.subtract(this.velocity)
 
-            if(distanceLen < this.minDistance){
-                distance.normalize().multiplyScalar(this.maxForce)
-            } else if(distanceLen < this.farPoint) {
-                distance.normalize().multiplyScalar((distanceLen-this.minDistance)*0.1)
-            } else {
-                return;
-            }
+            this.applyForce(space)
+        })*/
 
-            distance.subtract(this.velocity)
-
-            if(distance.length() > this.maxForce)
-                distance.normalize().multiplyScalar(this.maxForce)
-
-            this.applyForce(distance)
-        })
+        this.separate(particles)
 
         if(desire) {
-            let distance = desire.clone()
-                                    .subtract(this.position)
-                                    .normalize()
-                                    .multiplyScalar(this.maxForce)
-            this.applyForce(distance)
+            this.seek(desire)
         }
+    }
+
+    seek(target){
+        let space = target.clone()
+        space.subtract(this.position)
+        let distance = space.length()
+
+        space.normalize()
+
+        if(distance < this.slowdownCircle){
+            space.multiplyScalar(distance*0.05)
+        } else {
+            space.multiplyScalar(this.maxSpeed)
+        }
+
+        space.subtract(this.velocity)
+        if(space.length() > this.maxForce){
+            space.normalize().multiplyScalar(this.maxForce)
+        }
+        this.applyForce(space)
+    }
+
+    separate(others){
+        let count = 0
+        let sum = others.reduce((ac,el) => {
+                let space = this.position.clone().subtract(el.position)
+                if(el != this && space.length() < this.separateCircle){
+                    ac.add(space.normalize())
+                    count++
+                }
+                return ac
+            },new Victor(0,0))
+
+        if(count < 1) return
+
+        sum.divideScalar(count)
+        sum.normalize().multiplyScalar(this.maxSpeed)
+        sum.subtract(this.velocity)
+        if(sum.length() > this.maxForce){
+            sum.multiplyScalar(this.maxForce)
+        }
+        this.applyForce(sum)
     }
 
     update(){
 
         this.velocity.add(this.acceleration)
         this.position.add(this.velocity)
-        this.acceleration.x = 0;
-        this.acceleration.y = 0;
+        this.acceleration.x = 0
+        this.acceleration.y = 0
     }
 
     draw(context){

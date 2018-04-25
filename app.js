@@ -9,11 +9,11 @@ let mousePosition = new Victor(0,0)
 document.addEventListener("mousedown",() => mousePress = true)
 document.addEventListener("mouseup",() => mousePress = false)
 document.addEventListener("mousemove", (e) => {
-    mousePosition.x = e.clientX;
-    mousePosition.y = e.clientY;
+    mousePosition.x = e.clientX
+    mousePosition.y = e.clientY
 })
 
-const system = new ParticleSystem(100,700)
+const system = new ParticleSystem(10,700)
 
 function setup(){
     canvas.style.width = canvasWidth+"px"
