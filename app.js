@@ -13,7 +13,7 @@ document.addEventListener("mousemove", (e) => {
     mousePosition.y = e.clientY;
 })
 
-const system = new ParticleSystem(300,600)
+const system = new ParticleSystem(100,700)
 
 function setup(){
     canvas.style.width = canvasWidth+"px"
@@ -23,10 +23,15 @@ function setup(){
 
     system.position.x = canvasWidth/2
     system.position.y = canvasHeight/2
+
+    system.setBoundaries(0,canvasWidth,0,canvasHeight)
 }
 
 function update(){
-    system.update(mousePosition)
+    if(mousePress)
+        system.update(mousePosition)
+    else
+        system.update()
 }
 
 function draw(){

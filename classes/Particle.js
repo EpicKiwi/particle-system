@@ -5,9 +5,11 @@ class Particle extends Actor {
         this.velocity = new Victor(0,0)
         this.acceleration = new Victor(0,0)
 
-        this.maxSpeed = 10
         this.maxForce = 0.1
-        this.adaptativeRadius = 300
+
+        this.fieldOfView = 120
+        this.farPoint = 100
+        this.minDistance = 50
     }
 
     get direction(){
@@ -18,22 +20,45 @@ class Particle extends Actor {
         this.acceleration.add(force)
     }
 
-    applyBehaviour(goal){
-        let desire = goal.clone().subtract(this.position)
+    applyBehaviour(particles,desire){
 
-        if(desire.lengthSq() < Math.pow(this.adaptativeRadius,2)){
-            let adaptativeSpeed = desire.length()*this.maxSpeed/this.adaptativeRadius;
-            desire.normalize().multiplyScalar(adaptativeSpeed)
-        } else {
-            desire.normalize().multiplyScalar(this.maxSpeed)
+        particles.forEach((particle) => {
+            if(particle === this) return;
+
+            let distance = particle.position.clone().subtract(this.position)
+            let distanceLen = distance.length()
+
+            let dot = this.direction.dot(distance)
+            let angle = Math.acos(dot/(distanceLen*this.direction.length()))
+            if(angle*(180/Math.PI) > this.fieldOfView){
+                return;
+            }
+
+            //distance.add(particle.direction)
+
+            if(distanceLen < this.minDistance){
+                distance.normalize().multiplyScalar(this.maxForce)
+            } else if(distanceLen < this.farPoint) {
+                distance.normalize().multiplyScalar((distanceLen-this.minDistance)*0.1)
+            } else {
+                return;
+            }
+
+            distance.subtract(this.velocity)
+
+            if(distance.length() > this.maxForce)
+                distance.normalize().multiplyScalar(this.maxForce)
+
+            this.applyForce(distance)
+        })
+
+        if(desire) {
+            let distance = desire.clone()
+                                    .subtract(this.position)
+                                    .normalize()
+                                    .multiplyScalar(this.maxForce)
+            this.applyForce(distance)
         }
-
-        desire.subtract(this.velocity)
-
-        if(desire.lengthSq() > Math.pow(this.maxForce,2)){
-            desire.normalize().multiplyScalar(this.maxForce)
-        }
-        this.applyForce(desire)
     }
 
     update(){
